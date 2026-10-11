@@ -49,11 +49,24 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Build allowed origins and dynamic regex patterns
+cors_origins = []
+regex_patterns = [r"^https://.*\.vercel\.app$"]
+
+for origin in settings.CORS_ORIGINS:
+    if "*" in origin and origin != "*":
+        pattern = "^" + origin.replace(".", r"\.").replace("*", ".*") + "$"
+        regex_patterns.append(pattern)
+    else:
+        cors_origins.append(origin)
+
+combined_regex = "|".join(f"({p})" for p in regex_patterns) if regex_patterns else None
+
 # CORS setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origins=cors_origins,
+    allow_origin_regex=combined_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

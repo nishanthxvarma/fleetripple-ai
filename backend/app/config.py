@@ -10,11 +10,10 @@ class Settings(BaseSettings):
     PORT: int = int(os.getenv("PORT", "8000"))
     HOST: str = os.getenv("HOST", "0.0.0.0")
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./fleetripple.db")
-    CORS_ORIGINS: list[str] = [
+    CORS_ORIGINS: Union[str, list[str]] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
-        "*"
     ]
     DEFAULT_UNDERBOOKING_THRESHOLD: float = 50.0
     DEFAULT_VIABILITY_THRESHOLD: float = 70.0
@@ -22,16 +21,22 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    @field_validator("CORS_ORIGINS", mode="before")
+    @field_validator("CORS_ORIGINS", mode="after")
+    @classmethod
     def parse_cors_origins(cls, v: Union[str, list[str]]) -> list[str]:
         if isinstance(v, str):
-            if v.startswith("[") and v.endswith("]"):
+            v_stripped = v.strip()
+            if v_stripped.startswith("[") and v_stripped.endswith("]"):
                 import json
                 try:
-                    return json.loads(v)
+                    parsed = json.loads(v_stripped)
+                    if isinstance(parsed, list):
+                        return [str(item).strip() for item in parsed if str(item).strip()]
                 except Exception:
                     pass
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
-        return v
+            return [origin.strip() for origin in v_stripped.split(",") if origin.strip()]
+        elif isinstance(v, list):
+            return [str(origin).strip() for origin in v if str(origin).strip()]
+        return ["*"]
 
 settings = Settings()
