@@ -1,6 +1,15 @@
 // Centralized API client for FleetRipple AI
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+function getBaseUrl() {
+  const envUrl = (import.meta.env.VITE_API_BASE_URL || '/api').trim().replace(/\/+$/, '');
+  if (!envUrl || envUrl === '/api') {
+    return '/api';
+  }
+  // If full backend URL is provided (e.g. https://...onrender.com), ensure /api prefix is present
+  return envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`;
+}
+
+const BASE_URL = getBaseUrl();
 
 class ApiError extends Error {
   constructor(message, status, data) {
@@ -12,7 +21,8 @@ class ApiError extends Error {
 }
 
 async function request(endpoint, options = {}) {
-  const url = `${BASE_URL}${endpoint}`;
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${BASE_URL}${cleanEndpoint}`;
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),

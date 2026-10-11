@@ -227,6 +227,43 @@ To provide full transparency on what is live code vs. demonstration simulation:
 
 ---
 
-## 10. License
+## 10. Production Deployment Guide
+
+### A. Deploy Backend to Render
+1. Sign in to your [Render Dashboard](https://dashboard.render.com/).
+2. Click **New +** > **Blueprint** (or **Web Service**):
+   - **Option 1 (Blueprint - Recommended):** Connect `https://github.com/nishanthxvarma/fleetripple-ai`. Render will automatically detect [`render.yaml`](file:///d:/Projects/fleetripple-ai/render.yaml) and configure the service, build command, port, health check, and environment variables.
+   - **Option 2 (Manual Web Service):**
+     - **Name:** `fleetripple-ai-backend`
+     - **Runtime:** `Python 3`
+     - **Branch:** `main`
+     - **Root Directory:** leave blank (repository root)
+     - **Build Command:** `pip install -r backend/requirements.txt`
+     - **Start Command:** `uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port $PORT`
+     - **Health Check Path:** `/api/health`
+     - **Environment Variables:**
+       - `PYTHON_VERSION`: `3.11.9`
+       - `DATABASE_URL`: `sqlite:///./fleetripple.db` (or attach a hosted PostgreSQL database)
+       - `CORS_ORIGINS`: `https://*.vercel.app,http://localhost:5173`
+3. Click **Deploy Web Service** and wait for the service to start.
+4. Copy your public Render URL (e.g. `https://fleetripple-ai-backend.onrender.com`).
+
+### B. Deploy Frontend to Vercel
+1. Sign in to your [Vercel Dashboard](https://vercel.com/dashboard).
+2. Click **Add New...** > **Project** and import `nishanthxvarma/fleetripple-ai`.
+3. Configure the Project:
+   - **Framework Preset:** `Vite`
+   - **Root Directory:** `./`
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+4. In **Environment Variables**, add:
+   - **Key:** `VITE_API_BASE_URL`
+   - **Value:** `https://<YOUR-RENDER-BACKEND-URL>/api` (or without `/api`, the client automatically resolves it)
+5. Click **Deploy**.
+6. Once deployed, open your live Vercel URL (e.g. `https://fleetripple-ai.vercel.app`).
+
+---
+
+## 11. License
 
 This project was built for demonstration and evaluation purposes. All rights reserved.
